@@ -1,0 +1,4 @@
+.DS_Store
+**.pyc
+knowledge_base/local_file_store
+knowledge_base/vectorstore
