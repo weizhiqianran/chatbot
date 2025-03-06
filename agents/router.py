@@ -77,12 +77,17 @@ Question: {question}
 
     def invoke(self, state):
         question = state.get("question")
-        ret_result, thi_result = self.run(question)
+        try:  # sometimes it will fail due to guardrails
+            ret_result, thi_result = self.run(question)
 
-        state["router_need_retriever"] = ret_result.requires_retrieval
-        state["router_need_system_2"] = thi_result.requires_thinking
-        state["router_need_retriever_reason"] = ret_result.reason
-        state["router_need_system_2_reason"] = thi_result.reason
+            state["router_need_retriever"] = ret_result.requires_retrieval
+            state["router_need_system_2"] = thi_result.requires_thinking
+            state["router_need_retriever_reason"] = ret_result.reason
+            state["router_need_system_2_reason"] = thi_result.reason
+        except Exception as e:
+            print(e)
+            state["router_need_retriever"] = False
+            state["router_need_system_2"] = False
 
         return state
 
