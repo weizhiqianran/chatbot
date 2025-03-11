@@ -1,46 +1,39 @@
-# router.py
+
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
-from langchain_openai import ChatOpenAI  # 引入 OpenAI 兼容类
 from pydantic import BaseModel
+
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
+
 
 class RequireRetrieval(BaseModel):
     requires_retrieval: bool
     reason: str
 
+
 class RequireThinking(BaseModel):
     requires_thinking: bool
     reason: str
 
+
 class RouterAgent:
     def __init__(self):
-        # 从环境变量读取模型类型
-        model_type = os.getenv("ROUTER_MODEL_TYPE", "ollama").lower()
+        # 从环境变量加载 llm 的模型名称和 base_url
+        self.llm = ChatOllama(
+            model=os.getenv("OLLAMA_ROUTER_LLM", "llama3.1"),
+            base_url=os.getenv("OLLAMA_ROUTER_LLM_BASE_URL", "http://localhost:11434"),
+            temperature=0
+        )
 
-        if model_type == "ollama":
-            self.llm = ChatOllama(
-                model=os.getenv("OLLAMA_ROUTER_LLM", "llama3.1"),
-                base_url=os.getenv("OLLAMA_ROUTER_LLM_BASE_URL", "http://localhost:11434"),
-                temperature=0
-            )
-        elif model_type == "openai":
-            self.llm = ChatOpenAI(
-                model=os.getenv("OPENAI_ROUTER_LLM", "gpt-3.5-turbo"),
-                api_key=os.getenv("OPENAI_ROUTER_API_KEY"),
-                base_url=os.getenv("OPENAI_ROUTER_BASE_URL", None),  # vLLM 的 API 端点
-                temperature=0
-            )
-        else:
-            raise ValueError(f"Unsupported model type: {model_type}. Use 'ollama' or 'openai'.")
-
-        # 以下保持不变
-        self.req_ret_output_parser = PydanticOutputParser(pydantic_object=RequireRetrieval)
-        self.req_thi_output_parser = PydanticOutputParser(pydantic_object=RequireThinking)
+        self.req_ret_output_parser = PydanticOutputParser(
+            pydantic_object=RequireRetrieval
+        )
+        self.req_thi_output_parser = PydanticOutputParser(
+            pydantic_object=RequireThinking
+        )
 
         self.req_ret_prompt_template = """
 # Task
@@ -64,21 +57,39 @@ Strictly Return your response in this JSON format:
 Question: {question}
         """
 
-        self.req_ret_prompt = ChatPromptTemplate.from_template(self.req_ret_prompt_template)
-        self.req_ret_chain = self.req_ret_prompt | self.llm | self.req_ret_output_parser
+        self.req_ret_prompt = ChatPromptTemplate.from_template(
+            self.req_ret_prompt_template
+        )
+        self.req_ret_chain = (
+            self.req_ret_prompt | self.llm | self.req_ret_output_parser
+        )
 
-        self.req_thi_prompt = ChatPromptTemplate.from_template(self.req_thi_prompt_template)
-        self.req_thi_chain = self.req_thi_prompt | self.llm | self.req_thi_output_parser
+        self.req_thi_prompt = ChatPromptTemplate.from_template(
+            self.req_thi_prompt_template
+        )
+        self.req_thi_chain = (
+            self.req_thi_prompt | self.llm | self.req_thi_output_parser
+        )
 
     def run(self, question):
-        ret_result = self.req_ret_chain.invoke({"question": question})
-        thi_result = self.req_thi_chain.invoke({"question": question})
+        ret_result = self.req_ret_chain.invoke(
+            {
+                "question": question,
+            }
+        )
+
+        thi_result = self.req_thi_chain.invoke(
+            {
+                "question": question,
+            }
+        )
         return ret_result, thi_result
 
     def invoke(self, state):
         question = state.get("question")
-        try:
+        try:  # sometimes it will fail due to guardrails
             ret_result, thi_result = self.run(question)
+
             state["router_need_retriever"] = ret_result.requires_retrieval
             state["router_need_system_2"] = thi_result.requires_thinking
             state["router_need_retriever_reason"] = ret_result.reason
@@ -87,7 +98,9 @@ Question: {question}
             print(e)
             state["router_need_retriever"] = False
             state["router_need_system_2"] = False
+
         return state
+
 
 if __name__ == "__main__":
     question = 'how many "y" is in strawberry?'
