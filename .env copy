@@ -1,0 +1,22 @@
+
+MODEL_QWEN = qwen2.5
+MODEL_DEEPSEEK = deepseek-r1:8b
+
+
+LOCAL_URL = http://localhost:11434
+REMOTE_URL = https://613f6a1af01cdf8e1d.gradio.live
+
+OLLAMA_BASE_URL= https://613f6a1af01cdf8e1d.gradio.live
+OLLAMA_EMBEDDING_MODEL= intfloat-multilingual-e5-large-instruct
+
+OLLAMA_RESPONDER_LLM_1= qwen2.5
+OLLAMA_RESPONDER_LLM_2= deepseek-r1:8b
+OLLAMA_RETRIEVER_LLM= qwen2.5
+
+OLLAMA_RESPONDER_LLM_1_BASE_URL = https://613f6a1af01cdf8e1d.gradio.live
+OLLAMA_RESPONDER_LLM_2_BASE_URL = https://613f6a1af01cdf8e1d.gradio.live
+OLLAMA_RETRIEVER_LLM_BASE_URL = https://613f6a1af01cdf8e1d.gradio.live
+
+# RouterAgent 的环境变量
+OLLAMA_ROUTER_LLM= deepseek-r1:8b
+OLLAMA_ROUTER_LLM_BASE_URL= https://613f6a1af01cdf8e1d.gradio.live

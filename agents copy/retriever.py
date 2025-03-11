@@ -1,3 +1,4 @@
+
 from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import LocalFileStore
@@ -5,7 +6,6 @@ from langchain.storage._lc_store import create_kv_docstore
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_ollama import ChatOllama, OllamaEmbeddings
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings  # 添加 OpenAI 支持
 
 import os
 from dotenv import load_dotenv
@@ -14,35 +14,12 @@ load_dotenv()
 
 class RetrieverAgent:
     def __init__(self):
-        # 从环境变量读取模型类型
-        model_type = os.getenv("RETRIEVER_MODEL_TYPE", "ollama").lower()
-
-        # 初始化 LLM
-        if model_type == "ollama":
-            self.llm = ChatOllama(
-                model=os.getenv("OLLAMA_RETRIEVER_LLM", "llama3.1"),
-                base_url=os.getenv("OLLAMA_RETRIEVER_LLM_BASE_URL", "http://localhost:11434"),
-                temperature=0
-            )
-            embedding_function = OllamaEmbeddings(
-                model=os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text:latest"),
-                base_url=os.getenv("OLLAMA_RETRIEVER_LLM_BASE_URL", "http://localhost:11434")
-            )
-        elif model_type == "openai":
-            self.llm = ChatOpenAI(
-                model=os.getenv("OPENAI_RETRIEVER_LLM", "gpt-4"),
-                api_key=os.getenv("OPENAI_RETRIEVER_API_KEY"),
-                base_url=os.getenv("OPENAI_RETRIEVER_BASE_URL", None),  # 可选 vLLM 端点
-                temperature=0
-            )
-            embedding_function = OpenAIEmbeddings(
-                model=os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002"),
-                api_key=os.getenv("OPENAI_RETRIEVER_API_KEY"),
-                base_url=os.getenv("OPENAI_RETRIEVER_BASE_URL", None)
-            )
-        else:
-            raise ValueError(f"Unsupported model type: {model_type}. Use 'ollama' or 'openai'.")
-
+        # 从环境变量加载 llm 的模型名称和 base_url
+        self.llm = ChatOllama(
+            model=os.getenv("OLLAMA_RETRIEVER_LLM", "llama3.1"),
+            base_url=os.getenv("OLLAMA_RETRIEVER_LLM_BASE_URL", "http://localhost:11434"),
+            temperature=0
+        )
         self.search_term_prompt_template = """
 # Task
 You are an intelligent search term suggestion agent. Given a user question, suggest search english terms, up to 3 words, which will optimize the vector search.
@@ -69,7 +46,9 @@ Question: {question}
 
         self.vectorstore = Chroma(
             collection_name="parent_docs",
-            embedding_function=embedding_function,
+            embedding_function=OllamaEmbeddings(
+                model="nomic-embed-text:latest"
+            ),
             persist_directory=f"knowledge_base/vectorstore",
         )
 
