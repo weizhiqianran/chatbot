@@ -1,7 +1,12 @@
+
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 from pydantic import BaseModel
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class RequireRetrieval(BaseModel):
@@ -16,7 +21,12 @@ class RequireThinking(BaseModel):
 
 class RouterAgent:
     def __init__(self):
-        self.llm = ChatOllama(model="llama3.1", temperature=0)
+        # 从环境变量加载 llm 的模型名称和 base_url
+        self.llm = ChatOllama(
+            model=os.getenv("OLLAMA_ROUTER_LLM", "llama3.1"),
+            base_url=os.getenv("OLLAMA_ROUTER_LLM_BASE_URL", "http://localhost:11434"),
+            temperature=0
+        )
 
         self.req_ret_output_parser = PydanticOutputParser(
             pydantic_object=RequireRetrieval

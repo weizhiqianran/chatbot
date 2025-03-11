@@ -1,3 +1,4 @@
+
 from langchain.prompts import ChatPromptTemplate
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import LocalFileStore
@@ -6,10 +7,19 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 
 class RetrieverAgent:
     def __init__(self):
-        self.llm = ChatOllama(model="llama3.1", temperature=0)
+        # 从环境变量加载 llm 的模型名称和 base_url
+        self.llm = ChatOllama(
+            model=os.getenv("OLLAMA_RETRIEVER_LLM", "llama3.1"),
+            base_url=os.getenv("OLLAMA_RETRIEVER_LLM_BASE_URL", "http://localhost:11434"),
+            temperature=0
+        )
         self.search_term_prompt_template = """
 # Task
 You are an intelligent search term suggestion agent. Given a user question, suggest search english terms, up to 3 words, which will optimize the vector search.
@@ -69,7 +79,7 @@ Question: {question}
 
         return state
 
-
 if __name__ == "__main__":
     question = "who founded kredivo?"
     retriever_agent = RetrieverAgent()
+    retriever_agent.invoke({"question": question})

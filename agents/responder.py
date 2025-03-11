@@ -1,11 +1,26 @@
+
 from langchain.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class ResponderAgent:
     def __init__(self):
-        self.system1_model = ChatOllama(model="llama3.1", temperature=0)
-        self.system2_model = ChatOllama(model="deepseek-r1:8b", temperature=0)
+        # 从环境变量加载 system1_model 的模型名称和 base_url
+        self.system1_model = ChatOllama(
+            model=os.getenv("OLLAMA_RESPONDER_LLM_1", "llama3.1"),
+            base_url=os.getenv("OLLAMA_RESPONDER_LLM_1_BASE_URL", "http://localhost:11434"),
+            temperature=0
+        )
+        # 从环境变量加载 system2_model 的模型名称和 base_url
+        self.system2_model = ChatOllama(
+            model=os.getenv("OLLAMA_RESPONDER_LLM_2", "deepseek-r1:8b"),
+            base_url=os.getenv("OLLAMA_RESPONDER_LLM_2_BASE_URL", "http://localhost:11434"),
+            temperature=0
+        )
         self.responder_prompt_template = """
 # Task
 You are an intelligent responder agent. Given a user question, reply in a fun witty manner. 
@@ -59,7 +74,6 @@ Question: {question}
         )
         state["responder_reply"] = responder_reply
         return state
-
 
 if __name__ == "__main__":
     question = "how 'r's are in strawberry?"
